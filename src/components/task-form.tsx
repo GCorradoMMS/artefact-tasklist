@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createTaskSchema } from "@/lib/task-schemas";
@@ -32,6 +32,14 @@ export function TaskForm({ mode, task }: TaskFormProps) {
   const [description, setDescription] = useState(task?.description ?? "");
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [feedback, setFeedback] = useState<Feedback>(null);
+  const redirectTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Cancel a pending redirect if the user navigates away before it fires.
+  useEffect(() => {
+    return () => {
+      if (redirectTimer.current) clearTimeout(redirectTimer.current);
+    };
+  }, []);
 
   const createTask = trpc.task.create.useMutation({
     onSuccess: async (created) => {
@@ -42,7 +50,7 @@ export function TaskForm({ mode, task }: TaskFormProps) {
       // Refresh the list cache, give the user a moment to see the
       // confirmation, then navigate back to the list.
       await utils.task.list.invalidate();
-      setTimeout(() => router.push("/"), 800);
+      redirectTimer.current = setTimeout(() => router.push("/"), 800);
     },
     onError: (error) => {
       setFeedback({ tone: "error", message: error.message });
@@ -62,17 +70,21 @@ export function TaskForm({ mode, task }: TaskFormProps) {
     },
   });
 
-  const isSubmitting = createTask.isPending || updateTask.isPending;
+  // Keep the submit disabled after a successful create until the redirect
+  // fires, so the same task cannot be submitted twice.
+  const isSubmitting =
+    createTask.isPending ||
+    updateTask.isPending ||
+    (mode === "create" && createTask.isSuccess);
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     // Client-side validation with the shared schemas; the backend validates
-    // the exact same payload again before touching the store.
-    const parsed = createTaskSchema.safeParse({
-      title,
-      description: description === "" ? undefined : description,
-    });
+    // the exact same payload again before touching the store. `description`
+    // is always sent as a string so clearing the field clears it on the
+    // server too (the store normalizes "" to null).
+    const parsed = createTaskSchema.safeParse({ title, description });
 
     if (!parsed.success) {
       const errors: FieldErrors = {};
@@ -115,10 +127,13 @@ export function TaskForm({ mode, task }: TaskFormProps) {
           onChange={(event) => setTitle(event.target.value)}
           placeholder="What needs to be done?"
           aria-invalid={Boolean(fieldErrors.title)}
+          aria-describedby={fieldErrors.title ? "title-error" : undefined}
           className="w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-100 focus:outline-none"
         />
         {fieldErrors.title && (
-          <p className="mt-1 text-xs text-red-600">{fieldErrors.title}</p>
+          <p id="title-error" className="mt-1 text-xs text-red-600">
+            {fieldErrors.title}
+          </p>
         )}
       </div>
 
@@ -135,10 +150,15 @@ export function TaskForm({ mode, task }: TaskFormProps) {
           onChange={(event) => setDescription(event.target.value)}
           placeholder="Add more details…"
           aria-invalid={Boolean(fieldErrors.description)}
+          aria-describedby={
+            fieldErrors.description ? "description-error" : undefined
+          }
           className="w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-100 focus:outline-none"
         />
         {fieldErrors.description && (
-          <p className="mt-1 text-xs text-red-600">{fieldErrors.description}</p>
+          <p id="description-error" className="mt-1 text-xs text-red-600">
+            {fieldErrors.description}
+          </p>
         )}
       </div>
 
@@ -153,7 +173,9 @@ export function TaskForm({ mode, task }: TaskFormProps) {
               ? "Creating…"
               : "Saving…"
             : mode === "create"
-              ? "Create task"
+              ? createTask.isSuccess
+                ? "Created"
+                : "Create task"
               : "Save changes"}
         </button>
         <Link

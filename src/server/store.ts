@@ -1,9 +1,9 @@
 import { randomUUID } from "node:crypto";
-import type { Task, TaskPage } from "@/lib/types";
+import type { Task, TaskCursor, TaskPage } from "@/lib/types";
 
 export type CreateTaskInput = { title: string; description?: string | null };
 export type UpdateTaskInput = { title?: string; description?: string | null };
-export type ListTasksInput = { cursor?: number | null; limit: number };
+export type ListTasksInput = { cursor?: TaskCursor | null; limit: number };
 
 /**
  * In-memory task store.
@@ -68,19 +68,38 @@ class TaskStore {
   }
 
   /**
-   * Returns one page of tasks, newest first, using offset-based pagination.
+   * Returns one page of tasks, newest first, using keyset pagination: the
+   * cursor is the sort key of the previous page's last item, and only items
+   * strictly older than it can appear on this page. Unlike offset slicing,
+   * inserts and deletes between page fetches cannot duplicate or skip rows.
    * `nextCursor` is `null` when the collection has no more items, which
    * tells the client to stop requesting pages.
    */
   list({ cursor, limit }: ListTasksInput): TaskPage {
-    const offset = cursor ?? 0;
-    const sorted = [...this.tasks].sort(
-      (a, b) => b.createdAt.getTime() - a.createdAt.getTime(),
-    );
-    const items = sorted.slice(offset, offset + limit);
+    const sorted = [...this.tasks].sort((a, b) => {
+      const delta = b.createdAt.getTime() - a.createdAt.getTime();
+      if (delta !== 0) return delta;
+      // Stable tiebreak for identical timestamps (id descending).
+      return a.id < b.id ? 1 : a.id > b.id ? -1 : 0;
+    });
+
+    const remaining = cursor
+      ? sorted.filter((task) => this.sortsAfterCursor(task, cursor))
+      : sorted;
+    const items = remaining.slice(0, limit);
+    const last = items[items.length - 1];
     const nextCursor =
-      offset + limit < sorted.length ? offset + limit : null;
+      last && remaining.length > limit
+        ? { createdAt: last.createdAt.getTime(), id: last.id }
+        : null;
     return { items, nextCursor, total: sorted.length };
+  }
+
+  /** True when `task` is strictly older than `cursor` in the sort order. */
+  private sortsAfterCursor(task: Task, cursor: TaskCursor): boolean {
+    const taskMs = task.createdAt.getTime();
+    if (taskMs !== cursor.createdAt) return taskMs < cursor.createdAt;
+    return task.id < cursor.id;
   }
 
   get(id: string): Task | undefined {

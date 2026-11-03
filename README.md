@@ -91,4 +91,4 @@ src/
 ## Limitations
 
 - Data is stored in memory by design: it resets when the server restarts, and running multiple server instances would each hold their own data.
-- Cursor pagination is offset-based, which is enough for a fixed-size in-memory collection.
+- List pagination uses a keyset cursor (the sort key — creation timestamp plus id — of the last returned item), so pages remain stable even when tasks are created or deleted between page loads. It is not a stable ordering guarantee for concurrent writers beyond that.

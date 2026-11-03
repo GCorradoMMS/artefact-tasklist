@@ -12,6 +12,11 @@ const handler = (req: Request) =>
     req,
     router: appRouter,
     createContext: () => createTRPCContext(),
+    onError({ error }) {
+      // Server-side visibility for API failures (they would otherwise only
+      // surface in the browser).
+      console.error(error);
+    },
   });
 
 export { handler as GET, handler as POST };

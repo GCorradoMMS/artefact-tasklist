@@ -62,7 +62,15 @@ export function TaskList() {
           hasNextPage &&
           !isFetchingNextPage
         ) {
-          void fetchNextPage();
+          // Surface failures explicitly: with suspense hooks, an error thrown
+          // after data is already loaded does not reach the route error
+          // boundary, so a failed page load would otherwise be silent.
+          fetchNextPage().catch(() => {
+            setFeedback({
+              tone: "error",
+              message: "Could not load more tasks. Please scroll to try again.",
+            });
+          });
         }
       },
       // Start loading slightly before the sentinel becomes visible.

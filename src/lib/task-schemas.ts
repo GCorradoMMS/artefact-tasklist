@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { PAGE_SIZE } from "./constants";
 
 /**
  * Zod schemas shared by the backend (tRPC input validation) and the frontend
@@ -20,14 +21,25 @@ export const createTaskSchema = z.object({
   description: taskDescriptionSchema.optional(),
 });
 
-export const updateTaskSchema = z.object({
-  id: z.string().min(1, "Task id is required."),
-  title: taskTitleSchema.optional(),
-  description: taskDescriptionSchema.optional(),
+export const updateTaskSchema = z
+  .object({
+    id: z.string().min(1, "Task id is required."),
+    title: taskTitleSchema.optional(),
+    description: taskDescriptionSchema.optional(),
+  })
+  .refine(
+    (data) => data.title !== undefined || data.description !== undefined,
+    { message: "Provide at least one field to update." },
+  );
+
+/** Sort key of the last item of a page (see `TaskCursor`). */
+export const taskCursorSchema = z.object({
+  createdAt: z.number().int().min(0),
+  id: z.string().min(1),
 });
 
 export const listTasksSchema = z.object({
-  /** Offset cursor returned by the previous page (`nextCursor`). */
-  cursor: z.number().int().min(0).nullish(),
-  limit: z.number().int().min(1).max(50).default(10),
+  /** Sort key of the last item of the previous page (`nextCursor`). */
+  cursor: taskCursorSchema.nullish(),
+  limit: z.number().int().min(1).max(50).default(PAGE_SIZE),
 });

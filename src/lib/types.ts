@@ -9,9 +9,19 @@ export type Task = {
   createdAt: Date;
 };
 
+/**
+ * Sort key of the last item on a page. The client sends it back as `cursor`
+ * to fetch the page that follows it stably, even if the collection changes
+ * between page fetches.
+ */
+export type TaskCursor = {
+  createdAt: number;
+  id: string;
+};
+
 export type TaskPage = {
   items: Task[];
-  /** Offset cursor for the next page, or `null` when this is the last page. */
-  nextCursor: number | null;
+  /** Cursor for the next page, or `null` when this is the last page. */
+  nextCursor: TaskCursor | null;
   total: number;
 };

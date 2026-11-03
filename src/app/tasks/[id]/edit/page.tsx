@@ -1,3 +1,4 @@
+import { TRPCError } from "@trpc/server";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { TaskForm } from "@/components/task-form";
@@ -14,9 +15,13 @@ export default async function EditTaskPage({
 }) {
   const { id } = await params;
 
-  // Load the task on the server through the tRPC caller; if it does not
-  // exist, the backend NOT_FOUND error is converted into the 404 page.
-  const task = await api.task.byId({ id }).catch(() => notFound());
+  // Load the task on the server through the tRPC caller. Only a missing
+  // task maps to the 404 page; any other failure propagates to the route
+  // error boundary so real server faults stay visible.
+  const task = await api.task.byId({ id }).catch((error: unknown) => {
+    if (error instanceof TRPCError && error.code === "NOT_FOUND") notFound();
+    throw error;
+  });
 
   return (
     <main className="mx-auto w-full max-w-xl px-4 py-10">
