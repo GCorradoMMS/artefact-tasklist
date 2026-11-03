@@ -4,7 +4,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { TaskForm } from "@/components/task-form";
 import { ArrowLeftIcon } from "@/components/icons";
-import { panel } from "@/components/ui";
+import { backLink, cx, panel } from "@/components/ui";
 import { api } from "@/trpc/server";
 
 export const metadata: Metadata = {
@@ -28,17 +28,14 @@ export default async function EditTaskPage({
 
   return (
     <main className="mx-auto w-full max-w-xl px-4 py-10 sm:py-14">
-      <Link
-        href="/"
-        className="mb-5 inline-flex items-center gap-1.5 text-sm text-neutral-500 transition-colors hover:text-neutral-900"
-      >
+      <Link href="/" className={cx(backLink, "mb-4")}>
         <ArrowLeftIcon size={14} />
         Tasks
       </Link>
-      <h1 className="text-xl font-semibold tracking-tight text-neutral-900">
+      <h1 className="font-display text-h1 text-ink-900 text-balance">
         Edit task
       </h1>
-      <p className="mt-0.5 mb-6 text-sm text-neutral-500">
+      <p className="mt-1 mb-8 text-body-lg text-ink-600 text-pretty">
         Update the details below and save your changes.
       </p>
       <section className={panel}>

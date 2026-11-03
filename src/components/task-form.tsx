@@ -121,7 +121,7 @@ export function TaskForm({ mode, task }: TaskFormProps) {
       <div>
         <label
           htmlFor="title"
-          className="mb-1.5 block text-sm font-medium text-neutral-700"
+          className="mb-1.5 block text-body font-medium text-ink-700"
         >
           Title
         </label>
@@ -137,7 +137,7 @@ export function TaskForm({ mode, task }: TaskFormProps) {
           className={cx(inputField, fieldErrors.title && inputError)}
         />
         {fieldErrors.title && (
-          <p id="title-error" className="mt-1.5 text-xs text-red-600">
+          <p id="title-error" className="mt-1.5 text-caption font-medium text-danger-600">
             {fieldErrors.title}
           </p>
         )}
@@ -146,10 +146,10 @@ export function TaskForm({ mode, task }: TaskFormProps) {
       <div>
         <label
           htmlFor="description"
-          className="mb-1.5 block text-sm font-medium text-neutral-700"
+          className="mb-1.5 block text-body font-medium text-ink-700"
         >
           Description{" "}
-          <span className="font-normal text-neutral-400">(optional)</span>
+          <span className="font-normal text-ink-400">(optional)</span>
         </label>
         <textarea
           id="description"
@@ -165,7 +165,7 @@ export function TaskForm({ mode, task }: TaskFormProps) {
           className={cx(inputBase, fieldErrors.description && inputError)}
         />
         {fieldErrors.description && (
-          <p id="description-error" className="mt-1.5 text-xs text-red-600">
+          <p id="description-error" className="mt-1.5 text-caption font-medium text-danger-600">
             {fieldErrors.description}
           </p>
         )}

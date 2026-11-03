@@ -2,13 +2,14 @@
 
 @theme inline {
   --font-sans: var(--font-geist-sans);
+  --font-display: var(--font-fraunces);
+  --font-mono: var(--font-geist-mono);
 }
 
 @theme {
   /*
    * Accent palette: a single restrained indigo-violet used for primary
-   * actions, focus rings and selection. Neutrals stay stock Tailwind so
-   * surfaces, borders and text share one quiet ramp.
+   * actions, focus rings and selection. Primary anchored at accent-600.
    */
   --color-accent-50: #eef0fe;
   --color-accent-100: #e0e3fd;
@@ -20,6 +21,109 @@
   --color-accent-700: #3e44b4;
   --color-accent-800: #33398f;
   --color-accent-900: #2b2f72;
+  --color-accent: var(--color-accent-600); /* default alias → bg-accent, ring-accent */
+
+  /* Violet-gray neutrals — every gray shares the accent's undertone (hue ~248). */
+  --color-ink-50: #f7f7fb;
+  --color-ink-100: #eeeef7;
+  --color-ink-200: #dfdfec;
+  --color-ink-300: #c8c8dd;
+  --color-ink-400: #a1a1b8;
+  --color-ink-500: #73738c;
+  --color-ink-600: #62627c;
+  --color-ink-700: #4d4d66;
+  --color-ink-800: #39394f;
+  --color-ink-900: #262637;
+  --color-ink-950: #1e1e33;
+
+  /* Success — sage-leaning. */
+  --color-success-50: #f2f8f4;
+  --color-success-100: #e3f0e8;
+  --color-success-200: #c4e0cf;
+  --color-success-400: #5f9e7c;
+  --color-success-500: #478a68;
+  --color-success-600: #387557;
+  --color-success-800: #23513c;
+
+  /* Danger — muted brick-red. */
+  --color-danger-50: #fbf3f3;
+  --color-danger-100: #f6e4e4;
+  --color-danger-200: #ecc7c7;
+  --color-danger-400: #c96a6a;
+  --color-danger-500: #b5504f;
+  --color-danger-600: #a03e3e;
+  --color-danger-800: #6e2626;
+
+  /*
+   * Radii: bigger surface ⇒ bigger radius, always from the scale.
+   * Status pills stay rounded-full.
+   */
+  --radius-sm: 0.375rem; /* 6px  — chips, tiny badges */
+  --radius-md: 0.5rem; /* 8px  — skeletons */
+  --radius-lg: 0.625rem; /* 10px — buttons, icon buttons, banners (override of default 8px) */
+  --radius-xl: 0.75rem; /* 12px — panels, inputs, textareas */
+
+  /*
+   * Shadows, all tinted (ink-900 = rgb(38 38 55), accent-600 = rgb(74 81 212),
+   * accent-800 = rgb(43 47 114)) so they sit naturally on the pastel ground:
+   * one soft base + one whisper. Rows, inputs and secondary/icon buttons
+   * carry no shadow at rest.
+   */
+  --shadow-xs: 0 1px 2px rgb(38 38 55 / 0.04);
+  --shadow-sm: 0 1px 2px rgb(38 38 55 / 0.06);
+  --shadow-md: 0 1px 2px rgb(38 38 55 / 0.05), 0 4px 12px rgb(74 81 212 / 0.05);
+  /* Panels: tight soft base + wide accent-tinted whisper. */
+  --shadow-lg: 0 1px 2px rgb(38 38 55 / 0.06), 0 2px 4px rgb(74 81 212 / 0.04),
+    0 12px 32px rgb(74 81 212 / 0.08);
+  /* Primary CTA whisper. Buttons are otherwise flat. */
+  --shadow-accent: 0 1px 2px rgb(43 47 114 / 0.30), 0 1px 4px rgb(74 81 212 / 0.18);
+
+  /*
+   * Type scale. Tailwind v4 pairs --line-height/--letter-spacing/--font-weight
+   * onto each text-* utility, so one class carries size + leading + tracking
+   * + weight; the family is applied via font-display / font-sans / font-mono.
+   * Defaults (--text-sm, --text-xs, …) are deliberately not redefined.
+   */
+
+  /* Display moments — Fraunces. Wordmark, page h1s, empty-state headline only. */
+  --text-display-xl: 1.875rem; /* 30px — empty-state headline; wordmark option, see TYPOGRAPHY §4 */
+  --text-display-xl--line-height: 2.25rem;
+  --text-display-xl--letter-spacing: -0.02em;
+  --text-display-xl--font-weight: 600;
+
+  --text-h1: 1.75rem; /* 28px — all page h1s. Retires the old 20px h1 style. */
+  --text-h1--line-height: 2.125rem;
+  --text-h1--letter-spacing: -0.02em;
+  --text-h1--font-weight: 500;
+
+  /* Section / inline headings — Geist Sans */
+  --text-h2: 1.125rem; /* 18px */
+  --text-h2--line-height: 1.5rem;
+  --text-h2--letter-spacing: -0.01em;
+  --text-h2--font-weight: 600;
+
+  /* Body ramp — Geist Sans */
+  --text-body-lg: 1rem; /* 16px — subtitles, empty-state body */
+  --text-body-lg--line-height: 1.625rem;
+  --text-body-lg--letter-spacing: 0em;
+  --text-body-lg--font-weight: 400;
+
+  --text-body: 0.875rem; /* 14px — rows, inputs, buttons, banners */
+  --text-body--line-height: 1.25rem;
+  --text-body--letter-spacing: 0em;
+  --text-body--font-weight: 400;
+
+  /* Metadata — Geist Sans or Geist Mono */
+  --text-caption: 0.75rem; /* 12px — timestamps, counter, errors */
+  --text-caption--line-height: 1rem;
+  --text-caption--letter-spacing: 0em;
+  --text-caption--font-weight: 400;
+
+  /* Micro microcopy — Geist Mono, uppercase, tracking baked in */
+  --text-micro: 0.6875rem; /* 11px — panel-header label only; never body/interactive */
+  --text-micro--line-height: 0.875rem;
+  --text-micro--letter-spacing: 0.06em;
+  --text-micro--font-weight: 500;
 
   /* Discreet entrance for feedback banners and dynamically revealed rows. */
   --animate-fade-in: fade-in 160ms ease-out;
@@ -45,4 +149,40 @@
   .animate-pulse {
     animation: none;
   }
+}
+
+/* ── "Quiet Aurora" fixed background (light mode only) ───────────────
+   body::before = pastel washes · body::after = 1px dot grain.
+   Both: fixed, non-interactive, behind content. No animation.        */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  /* Base: ink-50. */
+  background-color: var(--color-ink-50);
+  background-repeat: no-repeat;
+  /* Top→bottom: settle-to-base fade, violet pool (upper-left, primary),
+     violet echo (upper-right), rose pool (low-right). */
+  background-image:
+    linear-gradient(to bottom, rgb(247 247 251 / 0) 70%, rgb(247 247 251 / 0.85) 100%),
+    radial-gradient(72rem 52rem at 14% -6%, rgb(127 134 243 / 0.16) 0%, rgb(127 134 243 / 0) 62%),
+    radial-gradient(64rem 44rem at 88% 10%, rgb(163 170 248 / 0.10) 0%, rgb(163 170 248 / 0) 60%),
+    radial-gradient(68rem 48rem at 82% 64%, rgb(240 176 192 / 0.14) 0%, rgb(240 176 192 / 0) 64%);
+}
+
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  /* 1px accent-600 dots on a 24px cell. Element opacity is the only knob. */
+  background-image: radial-gradient(circle, var(--color-accent-600) 1px, transparent 1px);
+  background-size: 24px 24px;
+  opacity: 0.035; /* ≈3.5% effective dot alpha — ruling ceiling is 4% */
+  /* Grain fades out below the first viewport. */
+  -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 70vh, transparent 105vh);
+  mask-image: linear-gradient(to bottom, #000 0%, #000 70vh, transparent 105vh);
 }

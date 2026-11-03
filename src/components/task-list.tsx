@@ -134,7 +134,7 @@ export function TaskList() {
           <header className={panelHeader}>
             Showing {tasks.length} of {total} {total === 1 ? "task" : "tasks"}
           </header>
-          <ul className="divide-y divide-neutral-100">
+          <ul className="divide-y divide-ink-100">
             {tasks.map((task) => (
               <TaskRow
                 key={task.id}
@@ -150,14 +150,14 @@ export function TaskList() {
       {isFetchingNextPage && (
         <div
           role="status"
-          className="flex items-center justify-center gap-2 py-3 text-sm text-neutral-500"
+          className="flex items-center justify-center gap-2 py-3 text-sm text-ink-600"
         >
           <SpinnerIcon className="animate-spin" />
           Loading more tasks…
         </div>
       )}
       {tasks.length > 0 && !hasNextPage && !isFetchingNextPage && (
-        <p className="py-3 text-center text-xs text-neutral-400">
+        <p className="py-4 text-center font-mono text-caption text-ink-500">
           End of the list.
         </p>
       )}
@@ -182,21 +182,21 @@ function TaskRow({
     <li
       aria-busy={isDeleting}
       className={cx(
-        "group px-4 py-3.5 transition-opacity duration-150 hover:bg-neutral-50/75",
+        "group px-4 py-3.5 transition duration-150 hover:bg-accent-500/[0.04]",
         isDeleting && "pointer-events-none opacity-50",
       )}
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <h2 className="break-words text-sm font-medium leading-5 text-neutral-900">
+          <h2 className="break-words text-body font-medium text-ink-900">
             {task.title}
           </h2>
           {task.description && (
-            <p className="mt-1 line-clamp-2 whitespace-pre-line break-words text-sm leading-5 text-neutral-500">
+            <p className="mt-1 line-clamp-2 whitespace-pre-line break-words text-body text-ink-500">
               {task.description}
             </p>
           )}
-          <p className="mt-2 text-xs text-neutral-400">
+          <p className="mt-2 font-mono text-caption text-ink-500">
             Created {formatDateTime(task.createdAt)}
           </p>
         </div>
@@ -233,18 +233,21 @@ function EmptyState() {
   return (
     <section
       aria-label="No tasks"
-      className={cx(panel, "flex flex-col items-center px-6 py-16 text-center")}
+      className={cx(
+        panel,
+        "flex flex-col items-center px-6 py-16 text-center sm:py-20",
+      )}
     >
-      <span className="flex h-11 w-11 items-center justify-center rounded-full border border-neutral-200 bg-neutral-50 text-neutral-400">
-        <InboxIcon size={20} />
+      <span className="flex h-14 w-14 items-center justify-center rounded-xl bg-linear-to-br from-accent-50 via-white to-[#f6edf3] text-accent-600 inset-ring-1 inset-ring-accent-500/10">
+        <InboxIcon size={24} />
       </span>
-      <h2 className="mt-4 text-sm font-semibold text-neutral-900">
+      <h2 className="mt-5 font-display text-display-xl text-ink-900 text-balance">
         No tasks yet
       </h2>
-      <p className="mt-1 text-sm text-neutral-500">
+      <p className="mt-1.5 text-body-lg text-ink-500 text-pretty max-w-sm">
         Create your first task to get started.
       </p>
-      <Link href="/tasks/new" className={cx("mt-5", buttonPrimary)}>
+      <Link href="/tasks/new" className={cx("mt-6", buttonPrimary)}>
         New task
       </Link>
     </section>

@@ -19,16 +19,16 @@ export function StatusMessage({
     <div
       role={tone === "error" ? "alert" : "status"}
       className={cx(
-        "flex animate-fade-in items-start gap-2.5 rounded-md border px-3 py-2.5 text-sm",
+        "flex animate-fade-in items-start gap-2.5 rounded-lg border px-3 py-2.5 text-sm",
         tone === "success"
-          ? "border-green-200 bg-green-50 text-green-800"
-          : "border-red-200 bg-red-50 text-red-800",
+          ? "border-success-200 bg-success-50 text-success-800"
+          : "border-danger-200 bg-danger-50 text-danger-800",
       )}
     >
       {tone === "success" ? (
-        <CheckCircleIcon className="mt-0.5 shrink-0 text-green-600" />
+        <CheckCircleIcon className="mt-0.5 shrink-0 text-success-600" />
       ) : (
-        <AlertCircleIcon className="mt-0.5 shrink-0 text-red-600" />
+        <AlertCircleIcon className="mt-0.5 shrink-0 text-danger-600" />
       )}
       <span className="leading-5">{children}</span>
     </div>

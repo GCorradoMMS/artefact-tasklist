@@ -18,7 +18,7 @@ export function TaskListSkeleton() {
         <div className={panelHeader}>
           <Skeleton className="h-3 w-32" />
         </div>
-        <div className="divide-y divide-neutral-100">
+        <div className="divide-y divide-ink-100">
           {Array.from({ length: 6 }, (_, index) => (
             <div key={index} className="px-4 py-3.5">
               <Skeleton className="h-4 w-1/3" />
@@ -40,7 +40,7 @@ export function TaskFormSkeleton() {
         href="/"
         aria-hidden="true"
         tabIndex={-1}
-        className="mb-5 inline-flex items-center gap-1.5 text-sm text-neutral-400"
+        className="mb-4 inline-flex items-center gap-1.5 rounded-md text-sm text-ink-400"
       >
         <ArrowLeftIcon size={14} /> Tasks
       </Link>

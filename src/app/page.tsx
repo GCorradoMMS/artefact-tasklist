@@ -1,10 +1,7 @@
 import { Suspense } from "react";
-import Link from "next/link";
 import { PAGE_SIZE } from "@/lib/constants";
 import { TaskList } from "@/components/task-list";
 import { TaskListSkeleton } from "@/components/skeletons";
-import { PlusIcon } from "@/components/icons";
-import { buttonPrimary } from "@/components/ui";
 import { HydrateClient, trpc } from "@/trpc/server";
 
 // The task list lives in memory and changes on every mutation, so the page
@@ -20,19 +17,13 @@ export default async function HomePage() {
 
   return (
     <main className="mx-auto w-full max-w-2xl px-4 py-10 sm:py-14">
-      <header className="mb-6 flex flex-wrap items-end justify-between gap-x-4 gap-y-3">
-        <div>
-          <h1 className="text-xl font-semibold tracking-tight text-neutral-900">
-            Tasks
-          </h1>
-          <p className="mt-0.5 text-sm text-neutral-500">
-            A simple task manager backed by a tRPC API.
-          </p>
-        </div>
-        <Link href="/tasks/new" className={buttonPrimary}>
-          <PlusIcon />
-          New task
-        </Link>
+      <header className="mb-8">
+        <h1 className="font-display text-h1 text-ink-900 text-balance">
+          Tasks
+        </h1>
+        <p className="mt-1 text-body-lg text-ink-600 text-pretty">
+          Plan, add, and complete your daily work.
+        </p>
       </header>
       <HydrateClient>
         <Suspense fallback={<TaskListSkeleton />}>

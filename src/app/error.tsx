@@ -22,21 +22,22 @@ export default function ErrorPage({
   }, [error]);
 
   return (
-    <main className="mx-auto w-full max-w-2xl px-4 py-16">
+    <main className="mx-auto w-full max-w-2xl px-4 py-10 sm:py-14">
+      <h1 className="font-display text-h1 text-ink-900 text-balance">
+        Something went wrong
+      </h1>
+      <p className="mt-1 mb-8 text-body-lg text-ink-600 text-pretty">
+        An unexpected error interrupted this view.
+      </p>
       <div className={`${panel} p-5 sm:p-6`}>
         <div className="flex items-start gap-3">
           <AlertCircleIcon
             size={20}
-            className="mt-0.5 shrink-0 text-red-600"
+            className="mt-0.5 shrink-0 text-danger-600"
           />
-          <div className="min-w-0">
-            <h1 className="text-sm font-semibold text-neutral-900">
-              Something went wrong
-            </h1>
-            <p className="mt-1 break-words text-sm leading-5 text-neutral-500">
-              {error.message}
-            </p>
-          </div>
+          <p className="min-w-0 break-words text-sm leading-6 text-ink-700">
+            {error.message}
+          </p>
         </div>
         <div className="mt-5 flex gap-2.5">
           <button type="button" onClick={reset} className={buttonPrimary}>
