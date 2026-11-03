@@ -4,9 +4,23 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { PAGE_SIZE } from "@/lib/constants";
 import { formatDateTime } from "@/lib/format-date";
+import {
+  removeTaskFromList,
+  restoreTaskList,
+  snapshotTaskList,
+} from "@/lib/task-cache";
 import type { Task } from "@/lib/types";
 import { trpc } from "@/trpc/provider";
+import { InboxIcon, PencilIcon, SpinnerIcon, TrashIcon } from "./icons";
 import { StatusMessage } from "./status-message";
+import {
+  buttonIcon,
+  buttonIconDanger,
+  buttonPrimary,
+  cx,
+  panel,
+  panelHeader,
+} from "./ui";
 
 type Feedback = { tone: "success" | "error"; message: string } | null;
 
@@ -17,6 +31,10 @@ type Feedback = { tone: "success" | "error"; message: string } | null;
  * hydrated into the cache below, so the list renders without a client-side
  * fetch. Scrolling near the bottom triggers `fetchNextPage`, which loads the
  * remaining pages incrementally (infinite scroll).
+ *
+ * Deleting is optimistic: the task leaves the list the moment the action is
+ * triggered, the cache is rolled back if the server rejects the mutation,
+ * and the reconciliation refetch runs in the background without blocking.
  */
 export function TaskList() {
   const utils = trpc.useUtils();
@@ -30,13 +48,31 @@ export function TaskList() {
   );
 
   const deleteTask = trpc.task.delete.useMutation({
-    onSuccess: async () => {
-      setFeedback({ tone: "success", message: "Task deleted successfully." });
-      // Refetch the loaded pages so the list reflects the removal.
-      await utils.task.list.invalidate();
+    // Remove the task from the cache immediately so the UI responds at once.
+    onMutate: async ({ id }) => {
+      // Stop any in-flight list refetch from overwriting the optimistic write.
+      await utils.task.list.cancel();
+      const previous = snapshotTaskList(utils.task.list);
+      removeTaskFromList(utils.task.list, id);
+      return { previous };
     },
-    onError: (error) => {
-      // Surface backend errors (e.g. deleting a task that no longer exists).
+    onSuccess: () => {
+      setFeedback({ tone: "success", message: "Task deleted." });
+      // The optimistic removal can leave page boundaries with one item of
+      // slack; reconcile them with a background refetch (never awaited, so
+      // it can't delay the interaction). A failure is surfaced, not hidden.
+      utils.task.list.invalidate().catch(() => {
+        setFeedback({
+          tone: "error",
+          message: "Could not refresh the task list. Please reload the page.",
+        });
+      });
+    },
+    onError: (error, _variables, context) => {
+      // Roll the optimistic removal back so the task reappears unchanged.
+      if (context?.previous) {
+        restoreTaskList(utils.task.list, context.previous);
+      }
       setFeedback({ tone: "error", message: error.message });
     },
   });
@@ -82,6 +118,7 @@ export function TaskList() {
 
   const tasks: Task[] = data.pages.flatMap((page) => page.items);
   const total = data.pages[0]?.total ?? 0;
+  const isEmpty = tasks.length === 0;
   const deletingId = deleteTask.isPending ? deleteTask.variables?.id : undefined;
 
   return (
@@ -90,67 +127,37 @@ export function TaskList() {
         <StatusMessage tone={feedback.tone}>{feedback.message}</StatusMessage>
       )}
 
-      {tasks.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-neutral-300 bg-white py-12 text-center">
-          <p className="text-neutral-500">No tasks yet.</p>
-          <Link
-            href="/tasks/new"
-            className="mt-2 inline-block font-medium text-blue-600 hover:underline"
-          >
-            Create your first task
-          </Link>
-        </div>
+      {isEmpty ? (
+        <EmptyState />
       ) : (
-        <>
-          <p className="text-sm text-neutral-500">
+        <section aria-label="Tasks" className={panel}>
+          <header className={panelHeader}>
             Showing {tasks.length} of {total} {total === 1 ? "task" : "tasks"}
-          </p>
-          {tasks.map((task) => (
-            <article
-              key={task.id}
-              className="rounded-lg border border-neutral-200 bg-white p-4 shadow-sm"
-            >
-              <div className="flex items-start justify-between gap-3">
-                <h2 className="min-w-0 text-base font-semibold break-words">
-                  {task.title}
-                </h2>
-                <div className="flex shrink-0 gap-2">
-                  <Link
-                    href={`/tasks/${task.id}/edit`}
-                    className="rounded-lg border border-neutral-300 px-3 py-1.5 text-sm font-medium text-blue-600 hover:bg-blue-50"
-                  >
-                    Edit
-                  </Link>
-                  <button
-                    type="button"
-                    onClick={() => deleteTask.mutate({ id: task.id })}
-                    disabled={deleteTask.isPending}
-                    className="rounded-lg border border-neutral-300 px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    {deletingId === task.id ? "Deleting…" : "Delete"}
-                  </button>
-                </div>
-              </div>
-              {task.description && (
-                <p className="mt-1 text-sm whitespace-pre-line break-words text-neutral-600">
-                  {task.description}
-                </p>
-              )}
-              <p className="mt-2 text-xs text-neutral-400">
-                Created {formatDateTime(task.createdAt)}
-              </p>
-            </article>
-          ))}
-        </>
+          </header>
+          <ul className="divide-y divide-neutral-100">
+            {tasks.map((task) => (
+              <TaskRow
+                key={task.id}
+                task={task}
+                isDeleting={deletingId === task.id}
+                onDelete={() => deleteTask.mutate({ id: task.id })}
+              />
+            ))}
+          </ul>
+        </section>
       )}
 
       {isFetchingNextPage && (
-        <p className="py-3 text-center text-sm text-neutral-500">
+        <div
+          role="status"
+          className="flex items-center justify-center gap-2 py-3 text-sm text-neutral-500"
+        >
+          <SpinnerIcon className="animate-spin" />
           Loading more tasks…
-        </p>
+        </div>
       )}
       {tasks.length > 0 && !hasNextPage && !isFetchingNextPage && (
-        <p className="py-3 text-center text-sm text-neutral-400">
+        <p className="py-3 text-center text-xs text-neutral-400">
           End of the list.
         </p>
       )}
@@ -159,5 +166,87 @@ export function TaskList() {
         <div ref={sentinelRef} aria-hidden="true" className="h-1" />
       )}
     </div>
+  );
+}
+
+function TaskRow({
+  task,
+  isDeleting,
+  onDelete,
+}: {
+  task: Task;
+  isDeleting: boolean;
+  onDelete: () => void;
+}) {
+  return (
+    <li
+      aria-busy={isDeleting}
+      className={cx(
+        "group px-4 py-3.5 transition-opacity duration-150 hover:bg-neutral-50/75",
+        isDeleting && "pointer-events-none opacity-50",
+      )}
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h2 className="break-words text-sm font-medium leading-5 text-neutral-900">
+            {task.title}
+          </h2>
+          {task.description && (
+            <p className="mt-1 line-clamp-2 whitespace-pre-line break-words text-sm leading-5 text-neutral-500">
+              {task.description}
+            </p>
+          )}
+          <p className="mt-2 text-xs text-neutral-400">
+            Created {formatDateTime(task.createdAt)}
+          </p>
+        </div>
+        <div className="flex shrink-0 items-center gap-1">
+          <Link
+            href={`/tasks/${task.id}/edit`}
+            aria-label="Edit task"
+            title="Edit"
+            className={buttonIcon}
+          >
+            <PencilIcon />
+          </Link>
+          <button
+            type="button"
+            onClick={onDelete}
+            disabled={isDeleting}
+            aria-label="Delete task"
+            title="Delete"
+            className={cx(buttonIcon, buttonIconDanger)}
+          >
+            {isDeleting ? (
+              <SpinnerIcon className="animate-spin" />
+            ) : (
+              <TrashIcon />
+            )}
+          </button>
+        </div>
+      </div>
+    </li>
+  );
+}
+
+function EmptyState() {
+  return (
+    <section
+      aria-label="No tasks"
+      className={cx(panel, "flex flex-col items-center px-6 py-16 text-center")}
+    >
+      <span className="flex h-11 w-11 items-center justify-center rounded-full border border-neutral-200 bg-neutral-50 text-neutral-400">
+        <InboxIcon size={20} />
+      </span>
+      <h2 className="mt-4 text-sm font-semibold text-neutral-900">
+        No tasks yet
+      </h2>
+      <p className="mt-1 text-sm text-neutral-500">
+        Create your first task to get started.
+      </p>
+      <Link href="/tasks/new" className={cx("mt-5", buttonPrimary)}>
+        New task
+      </Link>
+    </section>
   );
 }

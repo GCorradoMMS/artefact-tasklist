@@ -1,7 +1,10 @@
 import { TRPCError } from "@trpc/server";
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { TaskForm } from "@/components/task-form";
+import { ArrowLeftIcon } from "@/components/icons";
+import { panel } from "@/components/ui";
 import { api } from "@/trpc/server";
 
 export const metadata: Metadata = {
@@ -24,12 +27,25 @@ export default async function EditTaskPage({
   });
 
   return (
-    <main className="mx-auto w-full max-w-xl px-4 py-10">
-      <h1 className="text-2xl font-bold tracking-tight">Edit task</h1>
-      <p className="mt-1 mb-6 text-sm text-neutral-500">
+    <main className="mx-auto w-full max-w-xl px-4 py-10 sm:py-14">
+      <Link
+        href="/"
+        className="mb-5 inline-flex items-center gap-1.5 text-sm text-neutral-500 transition-colors hover:text-neutral-900"
+      >
+        <ArrowLeftIcon size={14} />
+        Tasks
+      </Link>
+      <h1 className="text-xl font-semibold tracking-tight text-neutral-900">
+        Edit task
+      </h1>
+      <p className="mt-0.5 mb-6 text-sm text-neutral-500">
         Update the details below and save your changes.
       </p>
-      <TaskForm mode="edit" task={task} />
+      <section className={panel}>
+        <div className="p-5 sm:p-6">
+          <TaskForm mode="edit" task={task} />
+        </div>
+      </section>
     </main>
   );
 }

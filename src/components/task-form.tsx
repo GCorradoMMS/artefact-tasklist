@@ -1,12 +1,21 @@
 "use client";
 
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createTaskSchema } from "@/lib/task-schemas";
+import { insertCreatedTask, updateTaskInList } from "@/lib/task-cache";
 import type { Task } from "@/lib/types";
 import { trpc } from "@/trpc/provider";
 import { StatusMessage } from "./status-message";
+import {
+  buttonPrimary,
+  buttonSecondary,
+  cx,
+  inputBase,
+  inputError,
+  inputField,
+} from "./ui";
 
 type Feedback = { tone: "success" | "error"; message: string } | null;
 type FieldErrors = { title?: string; description?: string };
@@ -23,6 +32,10 @@ interface TaskFormProps {
  * Field state is managed with hooks (`useState`) and validated with the same
  * Zod schemas the backend uses, so the user gets immediate feedback before a
  * request is even sent. Server errors are surfaced in the same banner.
+ *
+ * Both mutations write their server-confirmed result straight into the list
+ * cache (`lib/task-cache.ts`): the list reflects the change instantly and no
+ * blocking refetch or artificial delay runs before navigating back.
  */
 export function TaskForm({ mode, task }: TaskFormProps) {
   const router = useRouter();
@@ -32,25 +45,13 @@ export function TaskForm({ mode, task }: TaskFormProps) {
   const [description, setDescription] = useState(task?.description ?? "");
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [feedback, setFeedback] = useState<Feedback>(null);
-  const redirectTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  // Cancel a pending redirect if the user navigates away before it fires.
-  useEffect(() => {
-    return () => {
-      if (redirectTimer.current) clearTimeout(redirectTimer.current);
-    };
-  }, []);
 
   const createTask = trpc.task.create.useMutation({
-    onSuccess: async (created) => {
-      setFeedback({
-        tone: "success",
-        message: `Task "${created.title}" created successfully.`,
-      });
-      // Refresh the list cache, give the user a moment to see the
-      // confirmation, then navigate back to the list.
-      await utils.task.list.invalidate();
-      redirectTimer.current = setTimeout(() => router.push("/"), 800);
+    onSuccess: (created) => {
+      // The store returns the persisted task, so we can update the cache
+      // directly instead of waiting for a refetch, and navigate right away.
+      insertCreatedTask(utils.task.list, created);
+      router.push("/");
     },
     onError: (error) => {
       setFeedback({ tone: "error", message: error.message });
@@ -58,12 +59,14 @@ export function TaskForm({ mode, task }: TaskFormProps) {
   });
 
   const updateTask = trpc.task.update.useMutation({
-    onSuccess: async (updated) => {
+    onSuccess: (updated) => {
+      // Swap the updated task into every cached page; no refetch needed
+      // because updates never change the sort order or the total.
+      updateTaskInList(utils.task.list, updated);
       setFeedback({
         tone: "success",
-        message: `Task "${updated.title}" updated successfully.`,
+        message: `Task "${updated.title}" updated.`,
       });
-      await utils.task.list.invalidate();
     },
     onError: (error) => {
       setFeedback({ tone: "error", message: error.message });
@@ -110,13 +113,16 @@ export function TaskForm({ mode, task }: TaskFormProps) {
   }
 
   return (
-    <form onSubmit={handleSubmit} noValidate className="space-y-4">
+    <form onSubmit={handleSubmit} noValidate className="space-y-5">
       {feedback && (
         <StatusMessage tone={feedback.tone}>{feedback.message}</StatusMessage>
       )}
 
       <div>
-        <label htmlFor="title" className="mb-1 block text-sm font-medium">
+        <label
+          htmlFor="title"
+          className="mb-1.5 block text-sm font-medium text-neutral-700"
+        >
           Title
         </label>
         <input
@@ -128,17 +134,20 @@ export function TaskForm({ mode, task }: TaskFormProps) {
           placeholder="What needs to be done?"
           aria-invalid={Boolean(fieldErrors.title)}
           aria-describedby={fieldErrors.title ? "title-error" : undefined}
-          className="w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-100 focus:outline-none"
+          className={cx(inputField, fieldErrors.title && inputError)}
         />
         {fieldErrors.title && (
-          <p id="title-error" className="mt-1 text-xs text-red-600">
+          <p id="title-error" className="mt-1.5 text-xs text-red-600">
             {fieldErrors.title}
           </p>
         )}
       </div>
 
       <div>
-        <label htmlFor="description" className="mb-1 block text-sm font-medium">
+        <label
+          htmlFor="description"
+          className="mb-1.5 block text-sm font-medium text-neutral-700"
+        >
           Description{" "}
           <span className="font-normal text-neutral-400">(optional)</span>
         </label>
@@ -153,20 +162,20 @@ export function TaskForm({ mode, task }: TaskFormProps) {
           aria-describedby={
             fieldErrors.description ? "description-error" : undefined
           }
-          className="w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-100 focus:outline-none"
+          className={cx(inputBase, fieldErrors.description && inputError)}
         />
         {fieldErrors.description && (
-          <p id="description-error" className="mt-1 text-xs text-red-600">
+          <p id="description-error" className="mt-1.5 text-xs text-red-600">
             {fieldErrors.description}
           </p>
         )}
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2.5 pt-1">
         <button
           type="submit"
           disabled={isSubmitting}
-          className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+          className={buttonPrimary}
         >
           {isSubmitting
             ? mode === "create"
@@ -178,10 +187,7 @@ export function TaskForm({ mode, task }: TaskFormProps) {
                 : "Create task"
               : "Save changes"}
         </button>
-        <Link
-          href="/"
-          className="rounded-lg border border-neutral-300 px-4 py-2 text-sm font-medium hover:bg-neutral-100"
-        >
+        <Link href="/" className={buttonSecondary}>
           Cancel
         </Link>
       </div>

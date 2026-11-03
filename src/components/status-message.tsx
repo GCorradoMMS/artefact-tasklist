@@ -1,4 +1,6 @@
 import type { ReactNode } from "react";
+import { AlertCircleIcon, CheckCircleIcon } from "./icons";
+import { cx } from "./ui";
 
 export type StatusTone = "success" | "error";
 
@@ -16,13 +18,19 @@ export function StatusMessage({
   return (
     <div
       role={tone === "error" ? "alert" : "status"}
-      className={
+      className={cx(
+        "flex animate-fade-in items-start gap-2.5 rounded-md border px-3 py-2.5 text-sm",
         tone === "success"
-          ? "rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800"
-          : "rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
-      }
+          ? "border-green-200 bg-green-50 text-green-800"
+          : "border-red-200 bg-red-50 text-red-800",
+      )}
     >
-      {children}
+      {tone === "success" ? (
+        <CheckCircleIcon className="mt-0.5 shrink-0 text-green-600" />
+      ) : (
+        <AlertCircleIcon className="mt-0.5 shrink-0 text-red-600" />
+      )}
+      <span className="leading-5">{children}</span>
     </div>
   );
 }

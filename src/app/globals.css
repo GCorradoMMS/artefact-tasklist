@@ -3,3 +3,46 @@
 @theme inline {
   --font-sans: var(--font-geist-sans);
 }
+
+@theme {
+  /*
+   * Accent palette: a single restrained indigo-violet used for primary
+   * actions, focus rings and selection. Neutrals stay stock Tailwind so
+   * surfaces, borders and text share one quiet ramp.
+   */
+  --color-accent-50: #eef0fe;
+  --color-accent-100: #e0e3fd;
+  --color-accent-200: #c6cbfb;
+  --color-accent-300: #a3aaf8;
+  --color-accent-400: #7f86f3;
+  --color-accent-500: #5b63e8;
+  --color-accent-600: #4a51d4;
+  --color-accent-700: #3e44b4;
+  --color-accent-800: #33398f;
+  --color-accent-900: #2b2f72;
+
+  /* Discreet entrance for feedback banners and dynamically revealed rows. */
+  --animate-fade-in: fade-in 160ms ease-out;
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+      transform: translateY(2px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}
+
+::selection {
+  background-color: var(--color-accent-100);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-in,
+  .animate-pulse {
+    animation: none;
+  }
+}
