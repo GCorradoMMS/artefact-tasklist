@@ -22,7 +22,7 @@ npm install
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000). The app starts with a set of sample tasks so the list and the infinite scroll have content right away.
+Open [http://localhost:3000](http://localhost:3000). The app starts with 100 sample tasks so the list and the infinite scroll have content right away.
 
 Other scripts:
 
